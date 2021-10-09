@@ -11,6 +11,7 @@ from nntrainer.trainer.valid import accuracy
 from nntrainer.trainer.optimizer import get_optimizer
 from nntrainer.data_utils.dataset_loader import load_dataset
 # from nntrainer.model_utils.loss import RMSE
+from nntrainer.trainer.max_min_stat import MaxRecord
 from nntrainer.model_utils.trivial import UnitLayer
 from nntrainer.model_utils.view import View,Squeeze
 from nntrainer.model_utils.convbase import ConvBaseBlock
@@ -167,6 +168,8 @@ if __name__=='__main__':
     opt=get_optimizer(model.parameters(),'adam',{'lr':0.001,'betas':(0.9,0.999)})
 
     crit=AMGroup(['train_loss','valid_loss','top1','top3'])
+    best_top1=MaxRecord()
+    best_top1.update(0,epoch=-1,top3=0)
 
     
     for epoch in range(200):
@@ -202,4 +205,5 @@ if __name__=='__main__':
         print(f'Epoch {epoch}:')
         for k,v in crit.t_avg():
             print(f'\t{k}:{v}')
-        
+        best_top1.update(crit['top1'].avg,epoch=epoch,top3=crit['top3'].avg)
+        print(f'\tBest top1/3:{best_top1.value}/{best_top1.info["top3"]}@{best_top1.info["epoch"]}')
